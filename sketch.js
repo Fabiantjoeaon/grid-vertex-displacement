@@ -30,16 +30,17 @@ const settings = {
 const preset = [];
 
 const params = {
-    backgroundColor: [0, 0, 0.2, 1],
-    meshColor: [0.6, 0.1, 0.6, 1],
+    backgroundColor: [0, 0, 51],
+    meshColor: [153, 25, 153],
     lineThickness: 0.5,
     isSameAsBackgroundColor: false,
     inverse: true,
     fogDistance: [0, 140],
-    displacement: 0.4
+    displacement: 6
 };
 
 const updateUniforms = (val, key) => (params[key] = val);
+const mapColor = color => color.map(c => math.mapRange(c, 0, 255, 0, 1));
 
 gui.addColor(params, "backgroundColor").onChange(val => {
     updateUniforms(val, "backgroundColor");
@@ -48,10 +49,16 @@ gui.addColor(params, "meshColor").onChange(val => {
     updateUniforms(val, "meshColor");
 });
 gui.add(params, "displacement")
-    .min(0)
-    .max(15)
+    .min(1)
+    .max(20)
     .onChange(val => {
         updateUniforms(val, "displacement");
+    });
+gui.add(params, "lineThickness")
+    .min(0.1)
+    .max(3.5)
+    .onChange(val => {
+        updateUniforms(val, "lineThickness");
     });
 
 const vert = glslify`    
@@ -92,8 +99,8 @@ const frag = glslify`
     precision highp float;
     #extension GL_OES_standard_derivatives : enable
 
-    uniform vec4 uBackgroundColor;
-    uniform vec4 uMeshColor;
+    uniform vec3 uBackgroundColor;
+    uniform vec3 uMeshColor;
     uniform float uLineThickness;
     uniform bool uIsSameAsBackgroundColor;
     uniform bool uInverse;
@@ -117,39 +124,34 @@ const frag = glslify`
     void main () {
         vec3 wireColor;
         if (uIsSameAsBackgroundColor) {
-            wireColor = uBackgroundColor.rgb;
+            wireColor = uBackgroundColor;
         } else {
-            wireColor = uMeshColor.rgb;
+            wireColor = uMeshColor;
         }
         
         if(uInverse) {
-            wireColor *= mix(uBackgroundColor.rgb, wireColor * vec3(vDisplacementZ.z * 10.), vec3(vDisplacementZ.z));
+            wireColor *= mix(uBackgroundColor, wireColor * vec3(vDisplacementZ.z * 10.), vec3(vDisplacementZ.z));
         } else {
-            wireColor *= mix(wireColor * vec3(vDisplacementZ.z * 10.), uBackgroundColor.rgb, vec3(vDisplacementZ.z));
+            wireColor *= mix(wireColor * vec3(vDisplacementZ.z * 10.), uBackgroundColor, vec3(vDisplacementZ.z));
         }
         
         vec3 finalGrid = mix(
             wireColor, 
-            uBackgroundColor.rgb, 
+            uBackgroundColor, 
             vec3(_gridFactor(vB, uLineThickness, 1.))
         );
 
         // FOG
         float fogFactor = clamp((uFogDist.y - vDistanceFromEye) / uFogDist.y - uFogDist.x, 0.0, 1.0);
 
-        vec3 color = mix(uBackgroundColor.rgb, finalGrid, fogFactor);
+        vec3 color = mix(uBackgroundColor, finalGrid, fogFactor);
         
         gl_FragColor = vec4(color, 1.);
     }
 `;
 
 canvasSketch(({ gl }) => {
-    const {
-        lineThickness,
-        isSameAsBackgroundColor,
-        inverse,
-        fogDistance
-    } = params;
+    const { isSameAsBackgroundColor, inverse, fogDistance } = params;
     const regl = createRegl({
         gl,
         extensions: ["OES_standard_derivatives"]
@@ -220,7 +222,7 @@ canvasSketch(({ gl }) => {
                 new Float32Array(backgroundColor),
             uMeshColor: (_context, { meshColor }) =>
                 new Float32Array(meshColor),
-            uLineThickness: lineThickness,
+            uLineThickness: (_context, { lineThickness }) => lineThickness,
             uInverse: inverse,
             uIsSameAsBackgroundColor: isSameAsBackgroundColor
         },
@@ -232,21 +234,29 @@ canvasSketch(({ gl }) => {
     });
 
     return ({ time }) => {
-        const { meshColor, backgroundColor, displacement } = params;
+        const {
+            meshColor,
+            backgroundColor,
+            displacement,
+            lineThickness
+        } = params;
         // Update regl sizes
         regl.poll();
 
+        console.log(mapColor(backgroundColor));
+
         regl.clear({
-            color: backgroundColor,
+            color: [...mapColor(backgroundColor), 1],
             depth: 1
         });
 
         drawGrid({
             time: time * 0.5,
             eye: [40 * Math.cos(time * 0.5), 5 * Math.sin(time), -70],
-            backgroundColor,
-            meshColor,
-            displacement
+            backgroundColor: mapColor(backgroundColor),
+            meshColor: mapColor(meshColor),
+            displacement,
+            lineThickness
         });
     };
 }, settings);
