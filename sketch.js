@@ -6,11 +6,14 @@ import vec3 from "gl-vec3";
 import calculateBarycentrics from "glsl-solid-wireframe";
 import { math } from "canvas-sketch-util";
 import chunk from "lodash/chunk";
+import * as dat from "dat.gui";
 
 document.body.style.padding = "0px";
 document.body.style.margin = "0px";
 document.documentElement.style.padding = "0px";
 document.documentElement.style.margin = "0px";
+
+const gui = new dat.GUI();
 
 import Grid from "./Grid";
 
@@ -24,15 +27,32 @@ const settings = {
     animate: true
 };
 
+const preset = [];
+
 const params = {
-    backgroundColor: new Float32Array([0, 0, 0.2, 1]),
-    meshColor: new Float32Array([0.6, 0.1, 0.6, 1]),
+    backgroundColor: [0, 0, 0.2, 1],
+    meshColor: [0.6, 0.1, 0.6, 1],
     lineThickness: 0.5,
     isSameAsBackgroundColor: false,
     inverse: true,
-    fogDistance: new Float32Array([0, 120])
-    // eye: new Float32Array([40 * Math.cos(t * 0.5), 5 * Math.sin(t), -50])
+    fogDistance: [0, 140],
+    displacement: 0.4
 };
+
+const updateUniforms = (val, key) => (params[key] = val);
+
+gui.addColor(params, "backgroundColor").onChange(val => {
+    updateUniforms(val, "backgroundColor");
+});
+gui.addColor(params, "meshColor").onChange(val => {
+    updateUniforms(val, "meshColor");
+});
+gui.add(params, "displacement")
+    .min(0)
+    .max(15)
+    .onChange(val => {
+        updateUniforms(val, "displacement");
+    });
 
 const vert = glslify`    
     precision highp float;
@@ -40,6 +60,7 @@ const vert = glslify`
     uniform mat4 uProjection, uView, uRotate;
     uniform float uTime;
     uniform vec3 uEye;
+    uniform float uDisplacement;
     
     attribute vec3 aPosition;
     attribute vec2 aUv;
@@ -54,9 +75,9 @@ const vert = glslify`
     #pragma glslify: _cnoise4 = require(glsl-noise/classic/4d)
 
     void main () {
-        float r = _cnoise4(vec4(0.05 * aPosition + vec3(uTime ), vec3( 50. )));
+        float r = _cnoise4(vec4(0.05 * aPosition + vec3(uTime ), vec3( 100. )));
         mat4 modelView = uProjection * uView;
-        vec3 scaledNormal = aNormal * 3.;
+        vec3 scaledNormal = aNormal * uDisplacement;
         vec3 displacement = aPosition + scaledNormal * _cnoise4(vec4(aPosition, uTime)) * r;
 
         vB = aBarycentric;
@@ -115,6 +136,7 @@ const frag = glslify`
 
         // FOG
         float fogFactor = clamp((uFogDist.y - vDistanceFromEye) / uFogDist.y - uFogDist.x, 0.0, 1.0);
+
         vec3 color = mix(uBackgroundColor.rgb, finalGrid, fogFactor);
         
         gl_FragColor = vec4(color, 1.);
@@ -123,8 +145,6 @@ const frag = glslify`
 
 canvasSketch(({ gl }) => {
     const {
-        backgroundColor,
-        meshColor,
         lineThickness,
         isSameAsBackgroundColor,
         inverse,
@@ -171,6 +191,9 @@ canvasSketch(({ gl }) => {
                     // Vec3 UP
                     [0, 1, 0]
                 ),
+            // Is this the model matrix or the projection matrix?
+            // The fog algorithm expects the model matrix, but passing
+            // a projections matrix works just fine
             uProjection: ({ viewportWidth, viewportHeight }) =>
                 mat4.perspective(
                     [],
@@ -189,17 +212,17 @@ canvasSketch(({ gl }) => {
 
                 return rotationYMatrix;
             },
-            uBackgroundColor: backgroundColor,
-            uMeshColor: meshColor,
-            uLineThickness: lineThickness,
-            uIsSameAsBackgroundColor: isSameAsBackgroundColor,
-            uInverse: inverse,
-            uTime: (context, { t }) => {
-                console.log(t);
-                return t;
-            },
+            uTime: (_context, { time }) => time,
+            uDisplacement: (_context, { displacement }) => displacement,
             uFogDist: fogDistance,
-            uEye: (context, { eye }) => eye
+            uEye: (_context, { eye }) => new Float32Array(eye),
+            uBackgroundColor: (_context, { backgroundColor }) =>
+                new Float32Array(backgroundColor),
+            uMeshColor: (_context, { meshColor }) =>
+                new Float32Array(meshColor),
+            uLineThickness: lineThickness,
+            uInverse: inverse,
+            uIsSameAsBackgroundColor: isSameAsBackgroundColor
         },
         depth: {
             enable: true
@@ -209,6 +232,7 @@ canvasSketch(({ gl }) => {
     });
 
     return ({ time }) => {
+        const { meshColor, backgroundColor, displacement } = params;
         // Update regl sizes
         regl.poll();
 
@@ -218,12 +242,11 @@ canvasSketch(({ gl }) => {
         });
 
         drawGrid({
-            t: time * 0.5,
-            eye: new Float32Array([
-                40 * Math.cos(time * 0.5),
-                5 * Math.sin(time),
-                -50
-            ])
+            time: time * 0.5,
+            eye: [40 * Math.cos(time * 0.5), 5 * Math.sin(time), -70],
+            backgroundColor,
+            meshColor,
+            displacement
         });
     };
 }, settings);

@@ -28,11 +28,16 @@ buffer-from@^1.0.0:
   integrity sha512-MQcXEUbCKtEo7bhqEs6560Hyd4XaovZlO/k9V3hjVUF/zwW7KBVdSK4gIt/bzwS9MbR5qob+F5jusZsb0YQK2A==
 
 canvas-sketch-util@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/canvas-sketch-util/-/canvas-sketch-util-1.0.2.tgz#3de2e45e0b6f63fb48da90a3e60de5f031dfd635"
-  integrity sha512-Pt7gp0Y/xlrcg6cyHpP5fPAKSZ3agoNVhkySTeenQPTa8FNo6mZ3I75IM0D2FLuk++9rO6MYzCi+ZzWSzCaz/w==
+  version "1.4.2"
+  resolved "https://registry.yarnpkg.com/canvas-sketch-util/-/canvas-sketch-util-1.4.2.tgz#71f962b1b251151a52ab254bdd5c46946fcae4bc"
+  integrity sha512-qdRdKAOM91/kRMsX9utWN5uzDYPS5/5fadL94UpQb7IBbZ6OJgXRnJDijiRFvCFmDudoeJeq9enUSA87f/k7Ww==
   dependencies:
+    convert-length "^1.0.1"
     defined "^1.0.0"
+    lineclip "^1.1.5"
+    parse-color "^1.0.0"
+    primitive-quad "^2.0.0"
+    regl "^1.3.7"
     seed-random "^2.2.0"
     simplex-noise "^2.4.0"
 
@@ -52,6 +57,11 @@ canvas-sketch@^0.0.27:
     object-assign "^4.1.1"
     pad-left "^2.1.0"
     right-now "^1.0.0"
+
+color-convert@~0.5.0:
+  version "0.5.3"
+  resolved "https://registry.yarnpkg.com/color-convert/-/color-convert-0.5.3.tgz#bdb6c69ce660fadffe0b0007cc447e1b9f7282bd"
+  integrity sha1-vbbGnOZg+t/+CwAHzER+G59ygr0=
 
 commander@^2.15.1:
   version "2.19.0"
@@ -79,6 +89,11 @@ core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
+
+dat.gui@^0.7.3:
+  version "0.7.3"
+  resolved "https://registry.yarnpkg.com/dat.gui/-/dat.gui-0.7.3.tgz#fae5317a8baf65b509242d1f59b5a31a49bbb1a7"
+  integrity sha512-VfVWUcuTwae6/MTia/s2aPB1NLZXA2Gz6PiVyYOrVfODbXJLNAkVjn0aiuxx08cR68ucOuwrNXXt0m9MNVJvkQ==
 
 dateformat@^3.0.3:
   version "3.0.3"
@@ -201,10 +216,9 @@ glsl-inject-defines@^1.0.1:
     glsl-token-string "^1.0.1"
     glsl-tokenizer "^2.0.2"
 
-glsl-noise@^0.0.0:
+glsl-noise@hughsk/glsl-noise#master:
   version "0.0.0"
-  resolved "https://registry.yarnpkg.com/glsl-noise/-/glsl-noise-0.0.0.tgz#367745f3a33382c0eeec4cb54b7e99cfc1d7670b"
-  integrity sha1-NndF86MzgsDu7Ey1S36Zz8HXZws=
+  resolved "https://codeload.github.com/hughsk/glsl-noise/tar.gz/7870430c384bd53488ff6fe9a47f8a6f571524c4"
 
 glsl-resolve@0.0.1:
   version "0.0.1"
@@ -278,9 +292,9 @@ glsl-tokenizer@^2.0.0, glsl-tokenizer@^2.0.2:
     through2 "^0.6.3"
 
 glslify-bundle@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/glslify-bundle/-/glslify-bundle-5.0.0.tgz#0252ada1ef9df30b660006e0bb21fd130b486e42"
-  integrity sha1-AlKtoe+d8wtmAAbguyH9EwtIbkI=
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/glslify-bundle/-/glslify-bundle-5.1.1.tgz#30d2ddf2e6b935bf44d1299321e3b729782c409a"
+  integrity sha512-plaAOQPv62M1r3OsWf2UbjN0hUYAB7Aph5bfH58VxJZJhloRNbxOL9tl/7H71K7OLJoSJ2ZqWOKk3ttQ6wy24A==
   dependencies:
     glsl-inject-defines "^1.0.1"
     glsl-token-defines "^1.0.0"
@@ -371,6 +385,11 @@ levn@~0.3.0:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
 
+lineclip@^1.1.5:
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/lineclip/-/lineclip-1.1.5.tgz#2bf26067d94354feabf91e42768236db5616fd13"
+  integrity sha1-K/JgZ9lDVP6r+R5CdoI221YW/RM=
+
 lodash@^4.17.11:
   version "4.17.11"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.11.tgz#b39ea6229ef607ecd89e2c8df12536891cac9b8d"
@@ -457,6 +476,13 @@ pad-left@^2.1.0:
   dependencies:
     repeat-string "^1.5.4"
 
+parse-color@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/parse-color/-/parse-color-1.0.0.tgz#7b748b95a83f03f16a94f535e52d7f3d94658619"
+  integrity sha1-e3SLlag/A/FqlPU15S1/PZRlhhk=
+  dependencies:
+    color-convert "~0.5.0"
+
 parse-unit@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/parse-unit/-/parse-unit-1.0.1.tgz#7e1bb6d5bef3874c28e392526a2541170291eecf"
@@ -471,6 +497,11 @@ prelude-ls@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.1.2.tgz#21932a549f5e52ffd9a827f570e04be62a97da54"
   integrity sha1-IZMqVJ9eUv/ZqCf1cOBL5iqX2lQ=
+
+primitive-quad@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/primitive-quad/-/primitive-quad-2.0.0.tgz#c20993e4f9600238926bb500e529053043ef8aeb"
+  integrity sha1-wgmT5PlgAjiSa7UA5SkFMEPvius=
 
 process-nextick-args@~2.0.0:
   version "2.0.0"
@@ -510,9 +541,9 @@ regl-camera@^2.1.1:
     mouse-wheel "^1.2.0"
 
 regl@^1.3.7:
-  version "1.3.7"
-  resolved "https://registry.yarnpkg.com/regl/-/regl-1.3.7.tgz#0742755dead1aa230f08b79b98baea1048a2b80a"
-  integrity sha512-Uf005fU6C+VsYomGEOtDhpn6aiisljsJEG6CoGTgNnV5W28hDNDR3Xw9scAkx9X1JoZ/otYODztVWZpQNyJWcA==
+  version "1.3.9"
+  resolved "https://registry.yarnpkg.com/regl/-/regl-1.3.9.tgz#d293f2cb657618cecaf25c56dd550e3ba37b7926"
+  integrity sha512-CungQSUBsZNYZJWJlb2sPe4iwBjmxrgl1Yxt91HN3VuuEL7lJ5k03O3T1xEXVOCMN1q8wncddwJsxozuyzzmrA==
 
 repeat-string@^1.5.4:
   version "1.6.1"
