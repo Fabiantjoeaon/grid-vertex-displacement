@@ -7,6 +7,11 @@ import calculateBarycentrics from "glsl-solid-wireframe";
 import { math } from "canvas-sketch-util";
 import chunk from "lodash/chunk";
 
+document.body.style.padding = "0px";
+document.body.style.margin = "0px";
+document.documentElement.style.padding = "0px";
+document.documentElement.style.margin = "0px";
+
 import Grid from "./Grid";
 
 const settings = {
@@ -24,7 +29,9 @@ const params = {
     meshColor: new Float32Array([0.6, 0.1, 0.6, 1]),
     lineThickness: 0.5,
     isSameAsBackgroundColor: false,
-    inverse: true
+    inverse: true,
+    fogDistance: new Float32Array([0, 120])
+    // eye: new Float32Array([40 * Math.cos(t * 0.5), 5 * Math.sin(t), -50])
 };
 
 const vert = glslify`    
@@ -32,6 +39,7 @@ const vert = glslify`
 
     uniform mat4 uProjection, uView, uRotate;
     uniform float uTime;
+    uniform vec3 uEye;
     
     attribute vec3 aPosition;
     attribute vec2 aUv;
@@ -41,6 +49,7 @@ const vert = glslify`
     varying vec2 vB;
     // varying float vNoise;
     varying vec3 vDisplacementZ;
+    varying float vDistanceFromEye;
 
     #pragma glslify: _cnoise4 = require(glsl-noise/classic/4d)
 
@@ -52,6 +61,7 @@ const vert = glslify`
 
         vB = aBarycentric;
         vDisplacementZ = displacement;
+        vDistanceFromEye = distance(vec3(uProjection * vec4(aPosition, 1.)), uEye);
 
         gl_Position = modelView * uRotate * vec4(displacement, 1.);
     }
@@ -66,10 +76,12 @@ const frag = glslify`
     uniform float uLineThickness;
     uniform bool uIsSameAsBackgroundColor;
     uniform bool uInverse;
+    uniform vec2 uFogDist;
 
     varying vec2 vB;
     varying float vNoise;
     varying vec3 vDisplacementZ;
+    varying float vDistanceFromEye;
 
     // #pragma glslify: grid = require(glsl-solid-wireframe/barycentric/scaled)
     // http://codeflow.org/entries/2012/aug/02/easy-wireframe-display-with-barycentric-coordinates/
@@ -95,15 +107,17 @@ const frag = glslify`
             wireColor *= mix(wireColor * vec3(vDisplacementZ.z * 10.), uBackgroundColor.rgb, vec3(vDisplacementZ.z));
         }
         
-        vec3 barycentric = mix(
+        vec3 finalGrid = mix(
             wireColor, 
             uBackgroundColor.rgb, 
             vec3(_gridFactor(vB, uLineThickness, 1.))
         );
 
-        // float fogFactor = clamp((uFog))
+        // FOG
+        float fogFactor = clamp((uFogDist.y - vDistanceFromEye) / uFogDist.y - uFogDist.x, 0.0, 1.0);
+        vec3 color = mix(uBackgroundColor.rgb, finalGrid, fogFactor);
         
-        gl_FragColor = vec4(barycentric, 1.);
+        gl_FragColor = vec4(color, 1.);
     }
 `;
 
@@ -113,7 +127,8 @@ canvasSketch(({ gl }) => {
         meshColor,
         lineThickness,
         isSameAsBackgroundColor,
-        inverse
+        inverse,
+        fogDistance
     } = params;
     const regl = createRegl({
         gl,
@@ -123,6 +138,7 @@ canvasSketch(({ gl }) => {
     // FIXME: Last 2 parameters not working, probably because of grid code
     // Something goes wrong with counting vertices
     // It does work with times 4 (so 10, 40, 160)
+    // Could it be a missing final vector value for position?
     const grid = new Grid(100, 100, 160, 160);
 
     const { barycentric } = calculateBarycentrics({
@@ -144,20 +160,17 @@ canvasSketch(({ gl }) => {
         },
         elements: grid.cells,
         uniforms: {
-            uView: context => {
-                const t = 0.01 * context.tick;
-
-                return mat4.lookAt(
+            uView: (context, { eye }) =>
+                mat4.lookAt(
                     [],
                     // Vec3 eye
-                    [40 * Math.cos(t * 0.5), 5 * Math.sin(t), -50],
+                    eye,
                     // [0, 0, -90],
                     // Vec3 center
                     [0, 0, 0],
                     // Vec3 UP
                     [0, 1, 0]
-                );
-            },
+                ),
             uProjection: ({ viewportWidth, viewportHeight }) =>
                 mat4.perspective(
                     [],
@@ -181,9 +194,12 @@ canvasSketch(({ gl }) => {
             uLineThickness: lineThickness,
             uIsSameAsBackgroundColor: isSameAsBackgroundColor,
             uInverse: inverse,
-            uTime: context => {
-                return 0.01 * context.tick;
-            }
+            uTime: (context, { t }) => {
+                console.log(t);
+                return t;
+            },
+            uFogDist: fogDistance,
+            uEye: (context, { eye }) => eye
         },
         depth: {
             enable: true
@@ -192,7 +208,7 @@ canvasSketch(({ gl }) => {
         // count: grid.positions.length
     });
 
-    return () => {
+    return ({ time }) => {
         // Update regl sizes
         regl.poll();
 
@@ -200,6 +216,14 @@ canvasSketch(({ gl }) => {
             color: backgroundColor,
             depth: 1
         });
-        drawGrid();
+
+        drawGrid({
+            t: time * 0.5,
+            eye: new Float32Array([
+                40 * Math.cos(time * 0.5),
+                5 * Math.sin(time),
+                -50
+            ])
+        });
     };
 }, settings);
