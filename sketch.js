@@ -179,18 +179,12 @@ canvasSketch(({ gl }) => {
         extensions: ["OES_standard_derivatives"]
     });
 
-    // FIXME: Last 2 parameters not working, probably because of grid code
+    // FIXME:
+    // Last 2 parameters not working, probably because of grid code
     // Something goes wrong with counting vertices
     // It does work with times 4 (so 10, 40, 160)
     // Could it be a missing final vector value for position?
-    const grid = new Grid(
-        150,
-        100,
-        // 160,
-        // 160
-        sizeMap[currentSize],
-        sizeMap[currentSize]
-    );
+    const grid = new Grid(150, 100, sizeMap[currentSize], sizeMap[currentSize]);
 
     const { barycentric } = calculateBarycentrics({
         positions: grid.positions,
@@ -216,15 +210,14 @@ canvasSketch(({ gl }) => {
                     [],
                     // Vec3 eye
                     eye,
-                    // [0, 0, -90],
                     // Vec3 center
                     [0, 0, 0],
-                    // Vec3 UP
+                    // Vec3 up
                     [0, 1, 0]
                 ),
             // Is this the model matrix or the projection matrix?
             // The fog algorithm expects the model matrix, but passing
-            // a projections matrix works just fine
+            // a projection matrix works just fine
             uProjection: ({ viewportWidth, viewportHeight }) =>
                 mat4.perspective(
                     [],
