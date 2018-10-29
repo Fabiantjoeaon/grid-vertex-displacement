@@ -4,9 +4,10 @@
     "description": "",
     "main": "v1.js",
     "scripts": {
-        "start": "canvas-sketch sketch.js",
-        "export-temp": "canvas-sketch sketch.js --output=tmp/",
-        "export-gif": "canvas-sketch-gif tmp/ output.gif"
+        "start": "canvas-sketch src/index.js",
+        "export-temp": "canvas-sketch src/index.js --output=tmp/",
+        "export-gif": "canvas-sketch-gif tmp/ output.gif",
+        "build": "canvas-sketch --build src/index.js"
     },
     "keywords": [],
     "author": "",
