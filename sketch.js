@@ -2,32 +2,24 @@ import canvasSketch from "canvas-sketch";
 import createRegl from "regl";
 import glslify from "glslify";
 import mat4 from "gl-mat4";
-import vec3 from "gl-vec3";
 import calculateBarycentrics from "glsl-solid-wireframe";
 import { math } from "canvas-sketch-util";
 import chunk from "lodash/chunk";
 import * as dat from "dat.gui";
 
-document.body.style.padding = "0px";
-document.body.style.margin = "0px";
-document.documentElement.style.padding = "0px";
-document.documentElement.style.margin = "0px";
+import Grid from "./Grid";
+import { getParameterByName, replaceUrlParam } from "./browser";
 
 const gui = new dat.GUI();
 
-import Grid from "./Grid";
-
 const settings = {
     context: "webgl",
-    // Enable MSAA in WebGL
     attributes: {
         antialias: true
     },
-    // dimensions: [2448, 248],
+    // dimensions: [2800, 2800],
     animate: true
 };
-
-const preset = [];
 
 const params = {
     backgroundColor: [0, 0, 51],
@@ -41,6 +33,35 @@ const params = {
 
 const updateUniforms = (val, key) => (params[key] = val);
 const mapColor = color => color.map(c => math.mapRange(c, 0, 255, 0, 1));
+
+const sizeMap = {
+    big: 160,
+    medium: 40,
+    small: 10
+};
+let currentSize = getParameterByName("size", window.location.href);
+currentSize =
+    currentSize && currentSize.length > 0 && sizeMap.hasOwnProperty(currentSize)
+        ? currentSize
+        : "big";
+
+// For now just refresh the page, so we don't have
+// to update vertices, indices, and more attributes / uniforms :')
+gui.add(
+    {
+        size: currentSize
+    },
+    "size",
+    [...Object.keys(sizeMap)]
+)
+    .name("Size (   PAGE REFRESH!)")
+    .onChange(val => {
+        window.location.href = replaceUrlParam(
+            window.location.href,
+            "size",
+            val
+        );
+    });
 
 gui.addColor(params, "backgroundColor").onChange(val => {
     updateUniforms(val, "backgroundColor");
@@ -80,6 +101,7 @@ const vert = glslify`
     varying float vDistanceFromEye;
 
     #pragma glslify: _cnoise4 = require(glsl-noise/classic/4d)
+    
 
     void main () {
         float r = _cnoise4(vec4(0.05 * aPosition + vec3(uTime ), vec3( 100. )));
@@ -138,7 +160,7 @@ const frag = glslify`
         vec3 finalGrid = mix(
             wireColor, 
             uBackgroundColor, 
-            vec3(_gridFactor(vB, uLineThickness, 1.))
+            vec3(_gridFactor(vB, uLineThickness, .5))
         );
 
         // FOG
@@ -161,7 +183,14 @@ canvasSketch(({ gl }) => {
     // Something goes wrong with counting vertices
     // It does work with times 4 (so 10, 40, 160)
     // Could it be a missing final vector value for position?
-    const grid = new Grid(100, 100, 160, 160);
+    const grid = new Grid(
+        150,
+        100,
+        // 160,
+        // 160
+        sizeMap[currentSize],
+        sizeMap[currentSize]
+    );
 
     const { barycentric } = calculateBarycentrics({
         positions: grid.positions,
@@ -182,7 +211,7 @@ canvasSketch(({ gl }) => {
         },
         elements: grid.cells,
         uniforms: {
-            uView: (context, { eye }) =>
+            uView: (_context, { eye }) =>
                 mat4.lookAt(
                     [],
                     // Vec3 eye
@@ -204,7 +233,7 @@ canvasSketch(({ gl }) => {
                     0.01,
                     1000
                 ),
-            uRotate: context => {
+            uRotate: () => {
                 const rotationYMatrix = mat4.create();
                 mat4.rotateX(
                     rotationYMatrix,
@@ -240,10 +269,9 @@ canvasSketch(({ gl }) => {
             displacement,
             lineThickness
         } = params;
+
         // Update regl sizes
         regl.poll();
-
-        console.log(mapColor(backgroundColor));
 
         regl.clear({
             color: [...mapColor(backgroundColor), 1],
